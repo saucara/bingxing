@@ -1,7 +1,7 @@
 #include <iostream>
 #include <windows.h>
 using namespace std;
-const int N = 1000000;
+const int N = 100000000;
 const int REPEAT = 2000;
 double a[N];
 
