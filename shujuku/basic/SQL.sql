@@ -26,7 +26,10 @@ CREATE TABLE SONG (
     song_id      INT          PRIMARY KEY,
     title        VARCHAR(100) NOT NULL,
     duration     INT,
-    release_date DATE
+    release_date DATE,
+    work_id      INT,
+    theme_type   VARCHAR(50),
+    FOREIGN KEY (work_id) REFERENCES WORK(work_id)
 );
 
 CREATE TABLE ORIGINAL_SONG (
@@ -104,15 +107,6 @@ CREATE TABLE SETLIST (
     PRIMARY KEY (concert_id, song_id),
     FOREIGN KEY (concert_id) REFERENCES CONCERT(concert_id),
     FOREIGN KEY (song_id)    REFERENCES SONG(song_id)
-);
-
-CREATE TABLE THEME_SONG (
-    song_id    INT         NOT NULL,
-    work_id    INT         NOT NULL,
-    theme_type VARCHAR(50),
-    PRIMARY KEY (song_id, work_id),
-    FOREIGN KEY (song_id)  REFERENCES SONG(song_id),
-    FOREIGN KEY (work_id)  REFERENCES WORK(work_id)
 );
 
 

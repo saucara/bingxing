@@ -21,11 +21,11 @@ WHERE member_id IN (
 );
 
 SELECT title
-FROM SONG S
+FROM WORK W
 WHERE EXISTS (
     SELECT 1
-    FROM THEME_SONG T
-    WHERE T.song_id = S.song_id
+    FROM SONG S
+    WHERE S.work_id = W.work_id
 );
 
 
