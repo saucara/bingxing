@@ -1,4 +1,4 @@
-#include "md5.h"
+#include "md5_simd.h"
 #include <iomanip>
 #include <assert.h>
 #include <chrono>
@@ -80,24 +80,24 @@ Byte *StringProcess(string input, int *n_byte)
  * @param[out] state 用于给调用者传递额外的返回值，即最终的缓冲区，也就是MD5的结果
  * @return Byte消息数组
  */
-void MD5Hash(string input, bit32 *state)
+void MD5Hashsimd(string inputs[4], bit32 states[4][4])
 {
 
 	Byte *paddedMessage;
 	int *messageLength = new int[1];
 	for (int i = 0; i < 1; i += 1)
 	{
-		paddedMessage = StringProcess(input, &messageLength[i]);
+		paddedMessage = StringProcess(inputs[i], &messageLength[i]);
 		// cout<<messageLength[i]<<endl;
 		assert(messageLength[i] == messageLength[0]);
 	}
 	int n_blocks = messageLength[0] / 64;
 
 	// bit32* state= new bit32[4];
-	state[0] = 0x67452301;
-	state[1] = 0xefcdab89;
-	state[2] = 0x98badcfe;
-	state[3] = 0x10325476;
+	states[0][0] = 0x67452301;
+	states[0][1] = 0xefcdab89;
+	states[0][2] = 0x98badcfe;
+	states[0][3] = 0x10325476;
 
 	// 逐block地更新state
 	for (int i = 0; i < n_blocks; i += 1)
@@ -113,7 +113,7 @@ void MD5Hash(string input, bit32 *state)
 					(paddedMessage[4 * i1 + 3 + i * 64] << 24);
 		}
 
-		bit32 a = state[0], b = state[1], c = state[2], d = state[3];
+		bit32 a = states[0][0], b = states[0][1], c = states[0][2], d = states[0][3];
 
 		auto start = system_clock::now();
 		/* Round 1 */
@@ -188,20 +188,20 @@ void MD5Hash(string input, bit32 *state)
 		II(c, d, a, b, x[2], s43, 0x2ad7d2bb);
 		II(b, c, d, a, x[9], s44, 0xeb86d391);
 
-		state[0] += a;
-		state[1] += b;
-		state[2] += c;
-		state[3] += d;
+		states[0][0] += a;
+		states[0][1] += b;
+		states[0][2] += c;
+		states[0][3] += d;
 	}
 
 	// 下面的处理，在理解上较为复杂
 	for (int i = 0; i < 4; i++)
 	{
-		uint32_t value = state[i];
-		state[i] = ((value & 0xff) << 24) |		 // 将最低字节移到最高位
-				   ((value & 0xff00) << 8) |	 // 将次低字节左移
-				   ((value & 0xff0000) >> 8) |	 // 将次高字节右移
-				   ((value & 0xff000000) >> 24); // 将最高字节移到最低位
+		uint32_4_t value = states[0][i];
+		states[0][i] = ((value & 0xff) << 24) |		 // 将最低字节移到最高位
+					   ((value & 0xff00) << 8) |	 // 将次低字节左移
+					   ((value & 0xff0000) >> 8) |	 // 将次高字节右移
+					   ((value & 0xff000000) >> 24); // 将最高字节移到最低位
 	}
 
 	// 输出最终的hash结果
