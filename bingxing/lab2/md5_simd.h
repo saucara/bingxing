@@ -79,4 +79,4 @@ typedef unsigned int bit32;
   (a) += (b); \
 }
 
-void MD5Hashsimd(string inputs[4], bit32 states[4][4]);
+void MD5Hashsimd(string inputs[4], bit32 state[4][4]);
