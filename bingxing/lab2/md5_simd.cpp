@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <assert.h>
 #include <chrono>
+#include <arm_neon.h>
 
 using namespace std;
 using namespace chrono;
@@ -93,17 +94,6 @@ void MD5Hashsimd(string inputs[4], bit32 state[4][4])
 	}
 	int n_blocks = messageLength[0] / 64;
 
-
-	for (int i = 0; i < 4; i++) {
-		// bit32* state= new bit32[4];
-		state[i][0] = 0x67452301;
-		state[i][1] = 0xefcdab89;
-		state[i][2] = 0x98badcfe;
-		state[i][3] = 0x10325476;
-	}
-
-
-
 	// 逐block地更新state
 	for (int i = 0; i < n_blocks; i += 1)
 	{
@@ -120,7 +110,7 @@ void MD5Hashsimd(string inputs[4], bit32 state[4][4])
             x_simd[i1] = {val0, val1, val2, val3};
 		}
 
-		bit32 a = state[0][0], b = state[0][1], c = state[0][2], d = state[0][3];
+		uint32x4_t a = state[0][0], b = state[0][1], c = state[0][2], d = state[0][3];
 
 		auto start = system_clock::now();
 		/* Round 1 */
@@ -195,20 +185,44 @@ void MD5Hashsimd(string inputs[4], bit32 state[4][4])
 		II(c, d, a, b, x_simd[2], s43, 0x2ad7d2bb);
 		II(b, c, d, a, x_simd[9], s44, 0xeb86d391);
 
-		state[0][0] += a;
-		state[0][1] += b;
-		state[0][2] += c;
-		state[0][3] += d;
+
+
+		uint32x4_t init_a = vdupq_n_u32(0x67452301);
+		uint32x4_t init_b = vdupq_n_u32(0xefcdab89);
+		uint32x4_t init_c = vdupq_n_u32(0x98badcfe);
+		uint32x4_t init_d = vdupq_n_u32(0x10325476);
+
+		uint32x4_t sa = vaddq_u32(init_a, a);
+		uint32x4_t sb = vaddq_u32(init_b, b);
+		uint32x4_t sc = vaddq_u32(init_c, c);
+		uint32x4_t sd = vaddq_u32(init_d, d);
+
+		uint32_t tmp_a[4], tmp_b[4], tmp_c[4], tmp_d[4];
+		vst1q_u32(tmp_a, sa);
+		vst1q_u32(tmp_b, sb);
+		vst1q_u32(tmp_c, sc);
+		vst1q_u32(tmp_d, sd);
+
+		for (int i = 0; i < 4; i++) {
+			state[i][0] = tmp_a[i];
+			state[i][1] = tmp_b[i];
+			state[i][2] = tmp_c[i];
+			state[i][3] = tmp_d[i];
+		}
+
+
 	}
 
 	// 下面的处理，在理解上较为复杂
 	for (int i = 0; i < 4; i++)
 	{
-		uint32_4_t value = state[0][i];
-		state[0][i] = ((value & 0xff) << 24) |		 // 将最低字节移到最高位
+		for (int j = 0; j < 4; j++) {
+			uint32_t value = state[i][j];
+			state[i][j] = ((value & 0xff) << 24) |		 // 将最低字节移到最高位
 					   ((value & 0xff00) << 8) |	 // 将次低字节左移
 					   ((value & 0xff0000) >> 8) |	 // 将次高字节右移
 					   ((value & 0xff000000) >> 24); // 将最高字节移到最低位
+		}
 	}
 
 	// 输出最终的hash结果
@@ -220,7 +234,9 @@ void MD5Hashsimd(string inputs[4], bit32 state[4][4])
 
 	// 释放动态分配的内存
 	// 实现SIMD并行算法的时候，也请记得及时回收内存！
-	delete[] paddedMessage;
+	for (int i = 0; i <4; i++) {
+		delete[] paddedMessage[i];
+	}
 	delete[] messageLength;
 }
 
