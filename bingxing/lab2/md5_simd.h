@@ -40,22 +40,22 @@ using namespace std;
 #define FF_simd(a, b, c, d, x, s, ac) { \
     (a) = vaddq_u32(vaddq_u32(vaddq_u32(a, F_simd(b,c,d)), x), vdupq_n_u32(ac)); \
     (a) = vorrq_u32(vshlq_n_u32(a,s), vshrq_n_u32(a,32-s)); \
-    (a) += (b); \
+    (a) = vaddq_u32(a, b); \
 }
 #define GG_simd(a, b, c, d, x, s, ac) { \
     (a) = vaddq_u32(vaddq_u32(vaddq_u32(a, G_simd(b,c,d)), x), vdupq_n_u32(ac)); \
     (a) = vorrq_u32(vshlq_n_u32(a,s), vshrq_n_u32(a,32-s)); \
-    (a) += (b); \
+    (a) = vaddq_u32(a, b); \
 }
 #define HH_simd(a, b, c, d, x, s, ac) { \
     (a) = vaddq_u32(vaddq_u32(vaddq_u32(a, H_simd(b,c,d)), x), vdupq_n_u32(ac)); \
     (a) = vorrq_u32(vshlq_n_u32(a,s), vshrq_n_u32(a,32-s)); \
-    (a) += (b); \
+    (a) = vaddq_u32(a, b); \
 }
 #define II_simd(a, b, c, d, x, s, ac) { \
     (a) = vaddq_u32(vaddq_u32(vaddq_u32(a, I_simd(b,c,d)), x), vdupq_n_u32(ac)); \
     (a) = vorrq_u32(vshlq_n_u32(a,s), vshrq_n_u32(a,32-s)); \
-    (a) += (b); \
+    (a) = vaddq_u32(a, b); \
 }
 
 
