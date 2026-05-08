@@ -9,6 +9,9 @@ typedef unsigned char Byte;
 // 定义了32比特
 typedef unsigned int bit32;
 
+Byte *StringProcess(string input, int *n_byte);
+void MD5Hash(string input, bit32 *state);
+
 // MD5的一系列参数。参数是固定的，其实你不需要看懂这些
 #define s11 7
 #define s12 12
