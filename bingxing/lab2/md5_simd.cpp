@@ -110,7 +110,10 @@ void MD5Hashsimd(string inputs[4], bit32 state[4][4])
             x_simd[i1] = {val0, val1, val2, val3};
 		}
 
-		uint32x4_t a = state[0][0], b = state[0][1], c = state[0][2], d = state[0][3];
+		uint32x4_t a = vdupq_n_u32(0x67452301);
+        uint32x4_t b = vdupq_n_u32(0xefcdab89);
+        uint32x4_t c = vdupq_n_u32(0x98badcfe);
+        uint32x4_t d = vdupq_n_u32(0x10325476);
 
 		auto start = system_clock::now();
 		/* Round 1 */

@@ -43,6 +43,12 @@ typedef unsigned int bit32;
 #define H(x, y, z) ((x) ^ (y) ^ (z))
 #define I(x, y, z) ((y) ^ ((x) | (~z)))
 
+// SIMD版本
+#define F_SIMD(x,y,z) vorrq_u32(vandq_u32(x,y), vandq_u32(vmvnq_u32(x),z))
+#define G_SIMD(x,y,z) vorrq_u32(vandq_u32(x,z), vandq_u32(y, vmvnq_u32(z)))
+#define H_SIMD(x,y,z) veorq_u32(veorq_u32(x,y),z)
+#define I_SIMD(x,y,z) veorq_u32(y, vorrq_u32(x, vmvnq_u32(z)))
+
 /**
  * @Rotate Left.
  *
@@ -78,5 +84,27 @@ typedef unsigned int bit32;
   (a) = ROTATELEFT ((a), (s)); \
   (a) += (b); \
 }
+
+#define FF_SIMD(a, b, c, d, x, s, ac) { \
+    (a) = vaddq_u32(vaddq_u32(vaddq_u32(a, F_SIMD(b,c,d)), x), vdupq_n_u32(ac)); \
+    (a) = vorrq_u32(vshlq_n_u32(a,s), vshrq_n_u32(a,32-s)); \
+    (a) = vaddq_u32(a, b); \
+}
+#define GG_SIMD(a, b, c, d, x, s, ac) { \
+    (a) = vaddq_u32(vaddq_u32(vaddq_u32(a, G_SIMD(b,c,d)), x), vdupq_n_u32(ac)); \
+    (a) = vorrq_u32(vshlq_n_u32(a,s), vshrq_n_u32(a,32-s)); \
+    (a) = vaddq_u32(a, b); \
+}
+#define HH_SIMD(a, b, c, d, x, s, ac) { \
+    (a) = vaddq_u32(vaddq_u32(vaddq_u32(a, H_SIMD(b,c,d)), x), vdupq_n_u32(ac)); \
+    (a) = vorrq_u32(vshlq_n_u32(a,s), vshrq_n_u32(a,32-s)); \
+    (a) = vaddq_u32(a, b); \
+}
+#define II_SIMD(a, b, c, d, x, s, ac) { \
+    (a) = vaddq_u32(vaddq_u32(vaddq_u32(a, I_SIMD(b,c,d)), x), vdupq_n_u32(ac)); \
+    (a) = vorrq_u32(vshlq_n_u32(a,s), vshrq_n_u32(a,32-s)); \
+    (a) = vaddq_u32(a, b); \
+}
+
 
 void MD5Hashsimd(string inputs[4], bit32 state[4][4]);
