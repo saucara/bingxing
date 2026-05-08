@@ -81,7 +81,7 @@ Byte *StringProcess(string input, int *n_byte)
  * @param[out] state 用于给调用者传递额外的返回值，即最终的缓冲区，也就是MD5的结果
  * @return Byte消息数组
  */
-void MD5Hashsimd(string inputs[4], bit32 state[4][4])
+void MD5Hashsimd(string inputs[4], bit32 statesimd[4][4])
 {
 
 	Byte *paddedMessage[4];
@@ -207,10 +207,10 @@ void MD5Hashsimd(string inputs[4], bit32 state[4][4])
 		vst1q_u32(tmp_d, sd);
 
 		for (int i = 0; i < 4; i++) {
-			state[i][0] = tmp_a[i];
-			state[i][1] = tmp_b[i];
-			state[i][2] = tmp_c[i];
-			state[i][3] = tmp_d[i];
+			statesimd[i][0] = tmp_a[i];
+			statesimd[i][1] = tmp_b[i];
+			statesimd[i][2] = tmp_c[i];
+			statesimd[i][3] = tmp_d[i];
 		}
 
 
@@ -220,8 +220,8 @@ void MD5Hashsimd(string inputs[4], bit32 state[4][4])
 	for (int i = 0; i < 4; i++)
 	{
 		for (int j = 0; j < 4; j++) {
-			uint32_t value = state[i][j];
-			state[i][j] = ((value & 0xff) << 24) |		 // 将最低字节移到最高位
+			uint32_t value = statesimd[i][j];
+			statesimd[i][j] = ((value & 0xff) << 24) |		 // 将最低字节移到最高位
 					   ((value & 0xff00) << 8) |	 // 将次低字节左移
 					   ((value & 0xff0000) >> 8) |	 // 将次高字节右移
 					   ((value & 0xff000000) >> 24); // 将最高字节移到最低位
