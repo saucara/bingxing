@@ -1,3 +1,5 @@
+#ifndef MD5_SIMD_H
+#define MD5_SIMD_H
 #include <iostream>
 #include <string>
 #include <cstring>
@@ -60,3 +62,4 @@ using namespace std;
 
 
 void MD5Hashsimd(string inputs[4], bit32 statesimd[4][4]);
+#endif
