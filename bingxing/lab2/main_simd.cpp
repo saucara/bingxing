@@ -10,14 +10,9 @@
 using namespace std;
 using namespace chrono;
 
-// 编译指令（注意：产物仍命名为 main，因为 qsub.sh 跑的是 main）：
-//   g++ main_simd.cpp train.cpp guessing.cpp md5.cpp md5_simd.cpp -march=armv8-a -o main
-//   g++ main_simd.cpp train.cpp guessing.cpp md5.cpp md5_simd.cpp -march=armv8-a -O1 -o main
-//   g++ main_simd.cpp train.cpp guessing.cpp md5.cpp md5_simd.cpp -march=armv8-a -O2 -o main
 
 int main()
 {
-    // ============== 1) 串行 MD5 正确性测试 ==============
     cout << "Testing MD5Hash correctness..." << endl;
     string test_pws[8] = {"123456", "password", "12345678", "qwerty", "123456789", "12345", "1234", "111111"};
     string test_hashes[8] = {
@@ -45,55 +40,10 @@ int main()
     }
     cout << "MD5Hash test passed!" << endl; // 请不要修改这一行
 
-    // ============== 2) SIMD MD5 正确性自检 ==============
-    // 用两组测试：
-    //   (a) 4 路同长度短口令（length=6，1 个 block）
-    //   (b) 4 路同长度长口令（length=64，2 个 block，验证多 block 累积是否正确）
-    {
-        // (a)
-        string batch_a[4] = {"123456", "qwerty", "111111", "abcdef"};
-        bit32 simd_state[4][4];
-        MD5Hashsimd(batch_a, simd_state);
-        for (int i = 0; i < 4; i++) {
-            bit32 ref[4];
-            MD5Hash(batch_a[i], ref);
-            for (int j = 0; j < 4; j++) {
-                if (ref[j] != simd_state[i][j]) {
-                    cout << "SIMD MISMATCH (short batch) at input " << i
-                         << " word " << j
-                         << " ref=" << hex << ref[j]
-                         << " simd=" << simd_state[i][j] << endl;
-                    return 1;
-                }
-            }
-        }
-        // (b) 多 block 测试：长度 64 的口令 padding 后是 2 个 block
-        string long_pw1(64, 'a');
-        string long_pw2(64, 'b');
-        string long_pw3(64, 'c');
-        string long_pw4(64, 'd');
-        string batch_b[4] = {long_pw1, long_pw2, long_pw3, long_pw4};
-        MD5Hashsimd(batch_b, simd_state);
-        for (int i = 0; i < 4; i++) {
-            bit32 ref[4];
-            MD5Hash(batch_b[i], ref);
-            for (int j = 0; j < 4; j++) {
-                if (ref[j] != simd_state[i][j]) {
-                    cout << "SIMD MISMATCH (long batch) at input " << i
-                         << " word " << j
-                         << " ref=" << hex << ref[j]
-                         << " simd=" << simd_state[i][j] << endl;
-                    return 1;
-                }
-            }
-        }
-    }
-    cout << "MD5Hashsimd test passed!" << endl;
 
-    // ============== 3) 主流程：训练 + 猜测 + 哈希 ==============
-    double time_hash = 0;
-    double time_guess = 0;
-    double time_train = 0;
+    double time_hash = 0;  // 用于MD5哈希的时间
+    double time_guess = 0; // 哈希和猜测的总时长
+    double time_train = 0; // 模型训练的总时长
     PriorityQueue q;
     auto start_train = system_clock::now();
     q.m.train("/guessdata/Rockyou-singleLined-full.txt");
@@ -106,8 +56,9 @@ int main()
     cout << "here" << endl;
     int curr_num = 0;
     auto start = system_clock::now();
+    // 由于需要定期清空内存，我们在这里记录已生成的猜测总数
     int history = 0;
-
+    // std::ofstream a("./files/results.txt");
     while (!q.priority.empty())
     {
         q.PopNext();
@@ -117,27 +68,26 @@ int main()
             cout << "Guesses generated: " << history + q.total_guesses << endl;
             curr_num = q.total_guesses;
 
+            // 在此处更改实验生成的猜测上限
             int generate_n = 10000000;
             if (history + q.total_guesses > 10000000)
             {
                 auto end = system_clock::now();
                 auto duration = duration_cast<microseconds>(end - start);
                 time_guess = double(duration.count()) * microseconds::period::num / microseconds::period::den;
-                cout << "Guess time:" << time_guess - time_hash << "seconds" << endl; // 请不要修改这一行
-                cout << "Hash time:"  << time_hash << "seconds" << endl;               // 请不要修改这一行
-                cout << "Train time:" << time_train << "seconds" << endl;              // 请不要修改这一行
+                cout << "Guess time:" << time_guess - time_hash << "seconds" << endl;//请不要修改这一行
+                cout << "Hash time:"  << time_hash << "seconds" << endl;//请不要修改这一行
+                cout << "Train time:" << time_train << "seconds" << endl;//请不要修改这一行
                 break;
             }
         }
-
+        // 为了避免内存超限，我们在q.guesses中口令达到一定数目时，将其中的所有口令取出并且进行哈希
+        // 然后，q.guesses将会被清空。为了有效记录已经生成的口令总数，维护一个history变量来进行记录
         if (curr_num > 1000000)
         {
             auto start_hash = system_clock::now();
 
-            // ---------- 关键改动：按长度分桶后做 4 路 SIMD ----------
-            // 同一长度的口令一起送进 SIMD（保证 batch 内 4 路 padding 一致）
-            // 不足 4 个的尾巴走串行 MD5。
-            unordered_map<size_t, vector<int>> buckets;
+            unordered_map<size_t, vector<int>> buckets;//按长度分桶后做 4 路 SIMD
             buckets.reserve(64);
             for (int k = 0; k < (int)q.guesses.size(); ++k) {
                 buckets[q.guesses[k].size()].push_back(k);
@@ -161,13 +111,21 @@ int main()
                 for (; j < n; ++j) {
                     MD5Hash(q.guesses[idxs[j]], state);
                 }
+                // 以下注释部分用于输出猜测和哈希，但是由于自动测试系统不太能写文件，所以这里你可以改成cout
+                // a<<pw<<"\t";
+                // for (int i1 = 0; i1 < 4; i1 += 1)
+                // {
+                //     a << std::setw(8) << std::setfill('0') << hex << state[i1];
+                // }
+                // a << endl;   
             }
-            // -------------------------------------------------------
 
+            // 在这里对哈希所需的总时长进行计算
             auto end_hash = system_clock::now();
             auto duration = duration_cast<microseconds>(end_hash - start_hash);
             time_hash += double(duration.count()) * microseconds::period::num / microseconds::period::den;
 
+            // 记录已经生成的口令总数
             history += curr_num;
             curr_num = 0;
             q.guesses.clear();

@@ -7,31 +7,16 @@
 
 using namespace std;
 
-/*
- * MD5Hashsimd: 4 路并行的 MD5 哈希
- *
- * 关键设计：
- * 1. 不再调用 StringProcess 也不再 new[]/delete[]。
- *    所有 padding 都在栈上完成，消除堆分配开销（这是原版加速比 ≈ 1 的根因）。
- * 2. 修复了原版的多 block bug：原版每个 block 都把 a/b/c/d 重置成
- *    0x67452301 等初值，对长度 ≥ 56 字节的口令（n_blocks ≥ 2）会算错。
- *    现在 a/b/c/d 在 block 循环外初始化，每个 block 内用 aa/bb/cc/dd
- *    做局部累加，与串行版本语义一致。
- * 3. 4 路口令的字节交错加载用 vld4q_u8 一次完成，省掉手动 OR/移位。
- *
- * 前提：调用方保证 4 个 inputs 的 length 一致（按长度分桶）。
- */
 
-// 单口令长度上限（字符）。256 足够覆盖任何实际口令；如需更长，调大并保证栈够用。
+
 static constexpr int MAX_INPUT_LEN = 256;
-// 单口令 padding 后长度上限。MAX_INPUT_LEN + 64 足够（padding 最多 ~64 字节）。
+
 static constexpr int MAX_PADDED_LEN = 320;
 
 void MD5Hashsimd(string inputs[4], bit32 statesimd[4][4])
 {
-    // 1) 检查长度一致 + padding 计算（4 路共享 length，因此只算一次）
+    //检查长度一致+padding计算
     int length = (int)inputs[0].length();
-    // 调用方应保证 4 路等长，这里用 assert 给一道保险（release 下可被 -DNDEBUG 关掉）
     assert((int)inputs[1].length() == length);
     assert((int)inputs[2].length() == length);
     assert((int)inputs[3].length() == length);
@@ -46,16 +31,13 @@ void MD5Hashsimd(string inputs[4], bit32 statesimd[4][4])
     int paddedLength = length + paddingBytes + 8;
     int n_blocks = paddedLength / 64;
 
-    // 2) 栈上 buffer：4 路 padding 后的消息
-    //    alignas(16) 让 NEON load 对齐到 128 位边界，更友好
-    alignas(16) Byte paddedMessage[4][MAX_PADDED_LEN];
+    alignas(16) Byte paddedMessage[4][MAX_PADDED_LEN];//对齐
 
     for (int lane = 0; lane < 4; ++lane) {
         const char *src = inputs[lane].c_str();
         memcpy(paddedMessage[lane], src, length);
         paddedMessage[lane][length] = 0x80;
         memset(paddedMessage[lane] + length + 1, 0, paddingBytes - 1);
-        // 64 位小端长度（单位：bit）
         uint64_t bitlen64 = (uint64_t)length * 8;
         for (int k = 0; k < 8; ++k) {
             paddedMessage[lane][length + paddingBytes + k] =
@@ -63,19 +45,17 @@ void MD5Hashsimd(string inputs[4], bit32 statesimd[4][4])
         }
     }
 
-    // 3) MD5 初始化常量（4 路相同，broadcast）
-    uint32x4_t a = vdupq_n_u32(0x67452301);
+
+    uint32x4_t a = vdupq_n_u32(0x67452301);//初始化4路并行的a/b/c/d
     uint32x4_t b = vdupq_n_u32(0xefcdab89);
     uint32x4_t c = vdupq_n_u32(0x98badcfe);
     uint32x4_t d = vdupq_n_u32(0x10325476);
 
-    // 4) 逐 block 处理
-    for (int blk = 0; blk < n_blocks; ++blk) {
+    for (int blk = 0; blk < n_blocks; ++blk) {//处理
         uint32x4_t x_simd[16];
 
-        // 4 路字节交错加载：每路 64 字节 = 16 个 uint32
-        // 这里我们直接对每个 32 位 word 槽做 4 路收集
-        for (int i1 = 0; i1 < 16; ++i1) {
+
+        for (int i1 = 0; i1 < 16; ++i1) {//每个block分成16个32bit的小块，进行并行处理
             uint32_t v0 = (uint32_t)paddedMessage[0][blk*64 + 4*i1]
                         | ((uint32_t)paddedMessage[0][blk*64 + 4*i1 + 1] << 8)
                         | ((uint32_t)paddedMessage[0][blk*64 + 4*i1 + 2] << 16)
@@ -96,8 +76,7 @@ void MD5Hashsimd(string inputs[4], bit32 statesimd[4][4])
             x_simd[i1] = vld1q_u32(tmp);
         }
 
-        // 局部累加变量：每个 block 用 aa/bb/cc/dd 进行 64 步运算，
-        // 结束后把增量加回 a/b/c/d。
+
         uint32x4_t aa = a, bb = b, cc = c, dd = d;
 
         /* Round 1 */
@@ -172,14 +151,12 @@ void MD5Hashsimd(string inputs[4], bit32 statesimd[4][4])
         II_simd(cc, dd, aa, bb, x_simd[2],  s43, 0x2ad7d2bb);
         II_simd(bb, cc, dd, aa, x_simd[9],  s44, 0xeb86d391);
 
-        // 把本 block 的增量累加到全局状态
         a = vaddq_u32(a, aa);
         b = vaddq_u32(b, bb);
         c = vaddq_u32(c, cc);
         d = vaddq_u32(d, dd);
     }
 
-    // 5) 写出最终结果 + 字节序翻转（与串行 MD5Hash 保持一致）
     uint32_t out_a[4], out_b[4], out_c[4], out_d[4];
     vst1q_u32(out_a, a);
     vst1q_u32(out_b, b);
@@ -193,5 +170,4 @@ void MD5Hashsimd(string inputs[4], bit32 statesimd[4][4])
         statesimd[lane][2] = ((vc & 0xff) << 24) | ((vc & 0xff00) << 8) | ((vc & 0xff0000) >> 8) | ((vc & 0xff000000) >> 24);
         statesimd[lane][3] = ((vd & 0xff) << 24) | ((vd & 0xff00) << 8) | ((vd & 0xff0000) >> 8) | ((vd & 0xff000000) >> 24);
     }
-    // 无堆分配，无需 delete[]
 }
