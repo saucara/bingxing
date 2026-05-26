@@ -1,5 +1,25 @@
 #include "PCFG.h"
+#include <pthread.h>
 using namespace std;
+
+#define NUM_THREADS 1
+
+struct ThreadArg {
+    int start, end;
+    string prefix;
+    segment *seg;
+    vector<string> result;
+};
+
+void *threadFunc(void *arg) {
+    ThreadArg *p = (ThreadArg *)arg;
+    for (int i = p->start; i < p->end; i++) {
+        p->result.emplace_back(p->prefix + p->seg->ordered_values[i]);
+    }
+    return nullptr;
+}
+
+
 
 void PriorityQueue::CalProb(PT &pt)
 {
@@ -207,12 +227,32 @@ void PriorityQueue::Generate(PT pt)
         // 这个for循环就是你需要进行并行化的主要部分了，特别是在多线程&GPU编程任务中
         // 可以看到，这个循环本质上就是把模型中一个segment的所有value，赋值到PT中，形成一系列新的猜测
         // 这个过程是可以高度并行化的
-        for (int i = 0; i < pt.max_indices[0]; i += 1)
-        {
-            string guess = a->ordered_values[i];
-            // cout << guess << endl;
-            guesses.emplace_back(guess);
-            total_guesses += 1;
+        int n = pt.max_indices[0];
+        if (n < 5000) {
+            for (int i = 0; i < n; i++) {
+                guesses.emplace_back(a->ordered_values[i]);
+                total_guesses += 1;
+            }
+        } 
+        else {
+            pthread_t handles[NUM_THREADS];
+            ThreadArg args[NUM_THREADS];
+            int chunk = n / NUM_THREADS;
+            for (int t = 0; t < NUM_THREADS; t++) {
+                args[t].start = t * chunk;
+                args[t].end = (t == NUM_THREADS - 1) ? n : (t + 1) * chunk;
+                args[t].prefix = "";
+                args[t].seg = a;
+                pthread_create(&handles[t], nullptr, threadFunc, &args[t]);
+            }
+            for (int t = 0; t < NUM_THREADS; t++) {
+                pthread_join(handles[t], nullptr);
+            
+                guesses.insert(guesses.end(),
+                           args[t].result.begin(),
+                           args[t].result.end());
+                total_guesses += args[t].result.size();
+            }
         }
     }
     else
@@ -262,12 +302,32 @@ void PriorityQueue::Generate(PT pt)
         // 这个for循环就是你需要进行并行化的主要部分了，特别是在多线程&GPU编程任务中
         // 可以看到，这个循环本质上就是把模型中一个segment的所有value，赋值到PT中，形成一系列新的猜测
         // 这个过程是可以高度并行化的
-        for (int i = 0; i < pt.max_indices[pt.content.size() - 1]; i += 1)
-        {
-            string temp = guess + a->ordered_values[i];
-            // cout << temp << endl;
-            guesses.emplace_back(temp);
-            total_guesses += 1;
+        int n = pt.max_indices[pt.content.size() - 1];
+        if (n < 5000) {
+            for (int i = 0; i < n; i++) {
+                guesses.emplace_back(guess + a->ordered_values[i]);
+                total_guesses += 1;
+            }
+        } 
+        else {
+            pthread_t handles[NUM_THREADS];
+            ThreadArg args[NUM_THREADS];
+            int chunk = n / NUM_THREADS;
+            for (int t = 0; t < NUM_THREADS; t++) {
+                args[t].start = t * chunk;
+                args[t].end = (t == NUM_THREADS - 1) ? n : (t + 1) * chunk;
+                args[t].prefix = guess;
+                args[t].seg = a;
+                pthread_create(&handles[t], nullptr, threadFunc, &args[t]);
+            }
+            for (int t = 0; t < NUM_THREADS; t++) {
+                pthread_join(handles[t], nullptr);
+            
+                guesses.insert(guesses.end(),
+                           args[t].result.begin(),
+                           args[t].result.end());
+                total_guesses += args[t].result.size();
+            }
         }
     }
 }

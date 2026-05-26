@@ -208,17 +208,23 @@ void PriorityQueue::Generate(PT pt)
         // 可以看到，这个循环本质上就是把模型中一个segment的所有value，赋值到PT中，形成一系列新的猜测
         // 这个过程是可以高度并行化的
         int n = pt.max_indices[0];
-        vector<vector<string>> local(omp_get_max_threads());
-
-        #pragma omp parallel for schedule(dynamic)
-        for (int i = 0; i < n; i++) {
-            local[omp_get_thread_num()].emplace_back(a->ordered_values[i]);
-        }
-
-        for (auto &v : local) {
-           guesses.insert(guesses.end(), v.begin(), v.end());
-           total_guesses += v.size();
-        }
+        if (n < 5000) {
+            for (int i = 0; i < n; i++) {
+                guesses.emplace_back(a->ordered_values[i]);
+                total_guesses += 1;
+            }
+        } 
+        else {
+            vector<vector<string>> local(omp_get_max_threads());
+            #pragma omp parallel for schedule(static)
+            for (int i = 0; i < n; i++) {
+                local[omp_get_thread_num()].emplace_back(a->ordered_values[i]);
+            }
+            for (auto &v : local) {
+                guesses.insert(guesses.end(), v.begin(), v.end());
+                total_guesses += v.size();
+            }
+}
     }
     else
     {
@@ -267,20 +273,22 @@ void PriorityQueue::Generate(PT pt)
         // 这个for循环就是你需要进行并行化的主要部分了，特别是在多线程&GPU编程任务中
         // 可以看到，这个循环本质上就是把模型中一个segment的所有value，赋值到PT中，形成一系列新的猜测
         // 这个过程是可以高度并行化的
-        for (int i = 0; i < pt.max_indices[pt.content.size() - 1]; i += 1)
-        {
-            int n = pt.max_indices[pt.content.size() - 1];
+        int n = pt.max_indices[pt.content.size() - 1];
+        if (n < 5000) {
+            for (int i = 0; i < n; i++) {
+                guesses.emplace_back(guess + a->ordered_values[i]);
+                total_guesses += 1;
+            }
+        } else {
             vector<vector<string>> local(omp_get_max_threads());
-
-            #pragma omp parallel for schedule(dynamic)
+            #pragma omp parallel for schedule(static)
             for (int i = 0; i < n; i++) {
                 local[omp_get_thread_num()].emplace_back(guess + a->ordered_values[i]);
             }
-
             for (auto &v : local) {
-                 guesses.insert(guesses.end(), v.begin(), v.end());
+                guesses.insert(guesses.end(), v.begin(), v.end());
                 total_guesses += v.size();
             }
-        }
+        }  
     }
 }
