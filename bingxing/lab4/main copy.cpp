@@ -4,6 +4,7 @@
 #include <sstream>
 #include "md5.h"
 #include <iomanip>
+#include <mpi.h>
 using namespace std;
 using namespace chrono;
 
@@ -12,7 +13,7 @@ using namespace chrono;
 // g++ main.cpp train.cpp guessing.cpp md5.cpp -o main -O1
 // g++ main.cpp train.cpp guessing.cpp md5.cpp -o main -O2
 
-int main()
+int main(int argc, char* argv[])
 {
     //下面代码用于测试MD5哈希的正确性
     cout << "Testing MD5Hash correctness..." << endl;
