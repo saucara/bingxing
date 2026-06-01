@@ -69,12 +69,29 @@ int main(int argc, char* argv[])
     // std::ofstream a("./files/results.txt");
     while (!q.priority.empty())
     {
-        q.PopNext();
+        if (pt_counter % size == rank) {      // ← 新增判断
+            q.Generate(q.priority.front());
+        }
+        vector<PT> new_pts = q.priority.front().NewPTs();
+        for (PT pt : new_pts) {
+            q.CalProb(pt);
+            for (auto iter = q.priority.begin(); iter != q.priority.end(); iter++) {
+                if (iter != q.priority.end()-1 && iter != q.priority.begin()) {
+                    if (pt.prob <= iter->prob && pt.prob > (iter+1)->prob) {
+                        q.priority.emplace(iter+1, pt); break;
+                    }
+                }
+                if (iter == q.priority.end()-1) { q.priority.emplace_back(pt); break; }
+                if (iter == q.priority.begin() && iter->prob < pt.prob) {
+                    q.priority.emplace(iter, pt); break;
+                }
+            }
+        }
+        q.priority.erase(q.priority.begin());
+        pt_counter++;
 
 
 
-
-        
         q.total_guesses = q.guesses.size();
         if (q.total_guesses - curr_num >= 100000)
         {
@@ -125,4 +142,5 @@ int main(int argc, char* argv[])
             q.guesses.clear();
         }
     }
+    MPI_Finalize();
 }
