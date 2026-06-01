@@ -15,6 +15,11 @@ using namespace chrono;
 
 int main(int argc, char* argv[])
 {
+
+        MPI_Init(&argc, &argv);
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
     //下面代码用于测试MD5哈希的正确性
     cout << "Testing MD5Hash correctness..." << endl;
     string test_pws[8] = {"123456", "password", "12345678", "qwerty", "123456789", "12345", "1234", "111111"};
@@ -57,6 +62,7 @@ int main(int argc, char* argv[])
     q.init();
     cout << "here" << endl;
     int curr_num = 0;
+    int pt_counter = 0;
     auto start = system_clock::now();
     // 由于需要定期清空内存，我们在这里记录已生成的猜测总数
     int history = 0;
@@ -64,6 +70,11 @@ int main(int argc, char* argv[])
     while (!q.priority.empty())
     {
         q.PopNext();
+
+
+
+
+        
         q.total_guesses = q.guesses.size();
         if (q.total_guesses - curr_num >= 100000)
         {
