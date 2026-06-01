@@ -1,9 +1,3 @@
-/*==============================================================*/
-/* DBMS name:      MySQL 5.0                                    */
-/* Created on:     2026/4/12 15:19:30                           */
-/*==============================================================*/
-
-
 drop table if exists TV_drama;
 
 drop table if exists act;
@@ -32,9 +26,7 @@ drop table if exists song;
 
 drop table if exists work;
 
-/*==============================================================*/
-/* Table: TV_drama                                              */
-/*==============================================================*/
+/*TV_drama                                              */
 create table TV_drama
 (
    wor_work_id          int not null,
@@ -47,9 +39,7 @@ create table TV_drama
    primary key (wor_work_id, work_id)
 );
 
-/*==============================================================*/
-/* Table: act                                                   */
-/*==============================================================*/
+/*act                                                   */
 create table act
 (
    work_id              int not null,
@@ -57,9 +47,7 @@ create table act
    primary key (work_id, member_id)
 );
 
-/*==============================================================*/
-/* Table: album                                                 */
-/*==============================================================*/
+/*album                                                 */
 create table album
 (
    album_id             int not null,
@@ -69,9 +57,7 @@ create table album
    primary key (album_id)
 );
 
-/*==============================================================*/
-/* Table: album_song                                            */
-/*==============================================================*/
+/*album_song                                            */
 create table album_song
 (
    album_id             int not null,
@@ -79,9 +65,7 @@ create table album_song
    primary key (album_id, song_id)
 );
 
-/*==============================================================*/
 /* Table: concert                                               */
-/*==============================================================*/
 create table concert
 (
    concert_id           int not null,
@@ -93,9 +77,7 @@ create table concert
    primary key (concert_id)
 );
 
-/*==============================================================*/
-/* Table: cover_song                                            */
-/*==============================================================*/
+/*cover_song                                            */
 create table cover_song
 (
    son_song_id          int not null,
@@ -109,9 +91,7 @@ create table cover_song
    primary key (son_song_id, song_id)
 );
 
-/*==============================================================*/
-/* Table: hold                                                  */
-/*==============================================================*/
+/*hold                                                  */
 create table hold
 (
    concert_id           int not null,
@@ -119,9 +99,7 @@ create table hold
    primary key (concert_id, member_id)
 );
 
-/*==============================================================*/
-/* Table: member                                                */
-/*==============================================================*/
+/*Table: member                                                */
 create table member
 (
    member_id            int not null,
@@ -131,9 +109,7 @@ create table member
    primary key (member_id)
 );
 
-/*==============================================================*/
-/* Table: movie                                                 */
-/*==============================================================*/
+/*movie*/
 create table movie
 (
    wor_work_id          int not null,
@@ -144,9 +120,7 @@ create table movie
    primary key (wor_work_id, work_id)
 );
 
-/*==============================================================*/
-/* Table: original_song                                         */
-/*==============================================================*/
+/*original_song*/
 create table original_song
 (
    son_song_id          int not null,
@@ -161,9 +135,7 @@ create table original_song
    primary key (son_song_id, song_id)
 );
 
-/*==============================================================*/
-/* Table: perform                                               */
-/*==============================================================*/
+/*perform*/
 create table perform
 (
    song_id              int not null,
@@ -171,9 +143,7 @@ create table perform
    primary key (song_id, member_id)
 );
 
-/*==============================================================*/
-/* Table: setlist                                               */
-/*==============================================================*/
+/*setlist*/
 create table setlist
 (
    concert_id           int not null,
@@ -181,9 +151,7 @@ create table setlist
    primary key (concert_id, song_id)
 );
 
-/*==============================================================*/
-/* Table: song                                                  */
-/*==============================================================*/
+/*song*/
 create table song
 (
    song_id              int not null,
@@ -195,9 +163,9 @@ create table song
    primary key (song_id)
 );
 
-/*==============================================================*/
-/* Table: work                                                  */
-/*==============================================================*/
+
+
+/*work*/
 create table work
 (
    work_id              int not null,
