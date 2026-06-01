@@ -1,119 +1,133 @@
-CREATE TABLE MEMBER (
-    member_id  INT         PRIMARY KEY,
-    name       VARCHAR(50) NOT NULL,
+-- 按正确顺序建表（先建父表，再建子表）
+
+USE idol_db;
+
+CREATE TABLE member (
+    member_id  INT         NOT NULL,
+    name       VARCHAR(50),
     birthday   DATE,
-    debut_year INT
+    debut_year INT,
+    PRIMARY KEY (member_id)
 );
 
-CREATE TABLE CONCERT (
-    concert_id INT          PRIMARY KEY,
-    title      VARCHAR(100) NOT NULL,
+CREATE TABLE concert (
+    concert_id INT          NOT NULL,
+    title      VARCHAR(100),
     start_date DATE,
     end_date   DATE,
     venue      VARCHAR(100),
-    tour_name  VARCHAR(100)
+    tour_name  VARCHAR(100),
+    PRIMARY KEY (concert_id)
 );
 
-CREATE TABLE ALBUM (
-    album_id     INT          PRIMARY KEY,
-    title        VARCHAR(100) NOT NULL,
-    release_date DATE,
-    concert_id   INT,
-    FOREIGN KEY (concert_id) REFERENCES CONCERT(concert_id)
+CREATE TABLE work (
+    work_id INT          NOT NULL,
+    title   VARCHAR(100),
+    year    INT,
+    PRIMARY KEY (work_id)
 );
 
-CREATE TABLE SONG (
-    song_id      INT          PRIMARY KEY,
-    title        VARCHAR(100) NOT NULL,
-    duration     INT,
-    release_date DATE,
-    work_id      INT,
-    theme_type   VARCHAR(50),
-    FOREIGN KEY (work_id) REFERENCES WORK(work_id)
-);
-
-CREATE TABLE ORIGINAL_SONG (
-    song_id  INT         PRIMARY KEY,
-    lyricist VARCHAR(50),
-    composer VARCHAR(50),
-    FOREIGN KEY (song_id) REFERENCES SONG(song_id)
-);
-
-CREATE TABLE COVER_SONG (
-    song_id         INT          PRIMARY KEY,
-    original_artist VARCHAR(50),
-    FOREIGN KEY (song_id) REFERENCES SONG(song_id)
-);
-
-CREATE TABLE WORK (
-    work_id INT          PRIMARY KEY,
-    title   VARCHAR(100) NOT NULL,
-    year    INT
-);
-
-CREATE TABLE TV_DRAMA (
-    work_id  INT         PRIMARY KEY,
+CREATE TABLE TV_drama (
+    work_id  INT          NOT NULL,
     episodes INT,
     channel  VARCHAR(50),
     air_date DATE,
-    FOREIGN KEY (work_id) REFERENCES WORK(work_id)
+    title    VARCHAR(100),
+    year     INT,
+    PRIMARY KEY (work_id),
+    FOREIGN KEY (work_id) REFERENCES work(work_id)
 );
 
-CREATE TABLE MOVIE (
-    work_id    INT PRIMARY KEY,
+CREATE TABLE movie (
+    work_id    INT          NOT NULL,
     box_office INT,
-    FOREIGN KEY (work_id) REFERENCES WORK(work_id)
+    title      VARCHAR(100),
+    year       INT,
+    PRIMARY KEY (work_id),
+    FOREIGN KEY (work_id) REFERENCES work(work_id)
 );
 
-CREATE TABLE PERFORMS (
-    member_id     INT         NOT NULL,
-    song_id       INT         NOT NULL,
-    solo_or_group VARCHAR(20),
-    PRIMARY KEY (member_id, song_id),
-    FOREIGN KEY (member_id) REFERENCES MEMBER(member_id),
-    FOREIGN KEY (song_id)   REFERENCES SONG(song_id)
+CREATE TABLE song (
+    song_id      INT          NOT NULL,
+    title        VARCHAR(100),
+    duration     INT,
+    release_date DATE,
+    theme_type   VARCHAR(50),
+    work_id      INT,
+    PRIMARY KEY (song_id),
+    FOREIGN KEY (work_id) REFERENCES work(work_id)
 );
 
-CREATE TABLE ALBUM_SONG (
+CREATE TABLE original_song (
+    song_id      INT          NOT NULL,
+    lyricist     VARCHAR(50),
+    composer     VARCHAR(50),
+    title        VARCHAR(100),
+    duration     INT,
+    release_date DATE,
+    theme_type   VARCHAR(100),
+    work_id      INT,
+    PRIMARY KEY (song_id),
+    FOREIGN KEY (song_id) REFERENCES song(song_id)
+);
+
+CREATE TABLE cover_song (
+    song_id         INT          NOT NULL,
+    original_artist VARCHAR(50),
+    title           VARCHAR(100),
+    duration        INT,
+    release_date    DATE,
+    theme_type      VARCHAR(100),
+    work_id         INT,
+    PRIMARY KEY (song_id),
+    FOREIGN KEY (song_id) REFERENCES song(song_id)
+);
+
+CREATE TABLE album (
+    album_id     INT          NOT NULL,
+    concert_id   INT,
+    title        VARCHAR(100),
+    release_date DATE,
+    PRIMARY KEY (album_id),
+    FOREIGN KEY (concert_id) REFERENCES concert(concert_id)
+);
+
+CREATE TABLE album_song (
     album_id INT NOT NULL,
     song_id  INT NOT NULL,
-    track_no INT,
     PRIMARY KEY (album_id, song_id),
-    FOREIGN KEY (album_id) REFERENCES ALBUM(album_id),
-    FOREIGN KEY (song_id)  REFERENCES SONG(song_id)
+    FOREIGN KEY (album_id) REFERENCES album(album_id),
+    FOREIGN KEY (song_id)  REFERENCES song(song_id)
 );
 
-CREATE TABLE ACTS_IN (
-    member_id      INT          NOT NULL,
-    work_id        INT          NOT NULL,
-    character_name VARCHAR(50),
-    PRIMARY KEY (member_id, work_id),
-    FOREIGN KEY (member_id) REFERENCES MEMBER(member_id),
-    FOREIGN KEY (work_id)   REFERENCES WORK(work_id)
+CREATE TABLE act (
+    work_id   INT NOT NULL,
+    member_id INT NOT NULL,
+    PRIMARY KEY (work_id, member_id),
+    FOREIGN KEY (work_id)   REFERENCES work(work_id),
+    FOREIGN KEY (member_id) REFERENCES member(member_id)
 );
 
-CREATE TABLE HOLDS (
-    member_id  INT NOT NULL,
+CREATE TABLE hold (
     concert_id INT NOT NULL,
-    PRIMARY KEY (member_id, concert_id),
-    FOREIGN KEY (member_id)  REFERENCES MEMBER(member_id),
-    FOREIGN KEY (concert_id) REFERENCES CONCERT(concert_id)
+    member_id  INT NOT NULL,
+    PRIMARY KEY (concert_id, member_id),
+    FOREIGN KEY (concert_id) REFERENCES concert(concert_id),
+    FOREIGN KEY (member_id)  REFERENCES member(member_id)
 );
 
-CREATE TABLE SETLIST (
+CREATE TABLE perform (
+    song_id   INT NOT NULL,
+    member_id INT NOT NULL,
+    PRIMARY KEY (song_id, member_id),
+    FOREIGN KEY (song_id)   REFERENCES song(song_id),
+    FOREIGN KEY (member_id) REFERENCES member(member_id)
+);
+
+CREATE TABLE setlist (
     concert_id INT NOT NULL,
     song_id    INT NOT NULL,
-    order_no   INT,
     PRIMARY KEY (concert_id, song_id),
-    FOREIGN KEY (concert_id) REFERENCES CONCERT(concert_id),
-    FOREIGN KEY (song_id)    REFERENCES SONG(song_id)
+    FOREIGN KEY (concert_id) REFERENCES concert(concert_id),
+    FOREIGN KEY (song_id)    REFERENCES song(song_id)
 );
-
-
-
-
-
-
-
-
-
