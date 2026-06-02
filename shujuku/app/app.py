@@ -1,17 +1,17 @@
 from flask import Flask, render_template, request, jsonify
 import pymysql
- 
+
 app = Flask(__name__)
- 
+
 def get_connection():
     return pymysql.connect(
         host='localhost',
         user='root',
-        password='123456',
+        password='5127439',
         database='idol_db',
         charset='utf8mb4'
     )
- 
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -21,19 +21,22 @@ def index():
 def insert_album_song():
     album_id = request.form.get('album_id')
     song_id = request.form.get('song_id')
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("INSERT INTO album_song VALUES (%s, %s)", (album_id, song_id))
         conn.commit()
-        return jsonify({'status': 'success', 'message': f'Successfully added song {song_id} to album {album_id}!'})
+        return jsonify({'status': 'success', 'message': f'歌曲 {song_id} 已成功添加到专辑 {album_id}！'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 @app.route('/query_concerts', methods=['GET'])
 def query_concerts():
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -49,7 +52,8 @@ def query_concerts():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.route('/update_concert', methods=['POST'])
@@ -57,39 +61,39 @@ def update_concert():
     concert_id = request.form.get('concert_id')
     venue = request.form.get('venue')
     end_date = request.form.get('end_date')
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.callproc('update_concert_info', [concert_id, venue, end_date])
-        results = []
-        for result in cursor.stored_results():
-            results = result.fetchall()
+        cursor.execute("CALL update_concert_info(%s, %s, %s)", (concert_id, venue, end_date))
+        row = cursor.fetchone()
         conn.commit()
-        msg = results[0][0] if results else 'Updated successfully!'
+        msg = row[0] if row else '更新成功！'
         return jsonify({'status': 'success', 'message': msg})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.route('/delete_concert', methods=['POST'])
 def delete_concert():
     concert_id = request.form.get('concert_id')
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.callproc('delete_concert', [concert_id])
-        results = []
-        for result in cursor.stored_results():
-            results = result.fetchall()
+        cursor.execute("CALL delete_concert(%s)", (concert_id,))
+        row = cursor.fetchone()
         conn.commit()
-        msg = results[0][0] if results else 'Deleted successfully!'
+        msg = row[0] if row else '删除成功！'
         return jsonify({'status': 'success', 'message': msg})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 if __name__ == '__main__':
     app.run(debug=True)
