@@ -71,3 +71,25 @@ def update_concert():
         return jsonify({'status': 'error', 'message': str(e)})
     finally:
         conn.close()
+
+
+@app.route('/delete_concert', methods=['POST'])
+def delete_concert():
+    concert_id = request.form.get('concert_id')
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.callproc('delete_concert', [concert_id])
+        results = []
+        for result in cursor.stored_results():
+            results = result.fetchall()
+        conn.commit()
+        msg = results[0][0] if results else 'Deleted successfully!'
+        return jsonify({'status': 'success', 'message': msg})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
+    finally:
+        conn.close()
+
+if __name__ == '__main__':
+    app.run(debug=True)
