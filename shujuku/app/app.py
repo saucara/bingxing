@@ -32,6 +32,25 @@ def insert_album_song():
     finally:
         conn.close()
 
+@app.route('/query_concerts', methods=['GET'])
+def query_concerts():
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT concert_title, venue, SUM(song_count) AS total_songs
+            FROM concert_summary
+            GROUP BY concert_id, concert_title, venue
+            ORDER BY total_songs DESC
+        """)
+        rows = cursor.fetchall()
+        data = [{'concert_title': r[0], 'venue': r[1], 'total_songs': r[2]} for r in rows]
+        return jsonify({'status': 'success', 'data': data})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
+    finally:
+        conn.close()
+
 
 @app.route('/update_concert', methods=['POST'])
 def update_concert():
