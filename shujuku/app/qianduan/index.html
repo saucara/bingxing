@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>岚数据库管理系统</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f5f0e8;
+            --panel: #faf7f2;
+            --border: #ddd8cc;
+            --accent: #8a7560;
+            --text: #2a2520;
+            --text-dim: #9a9088;
+            --success: #5a8a6a;
+            --error: #8a5a5a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Noto Sans SC', sans-serif;
+            font-weight: 300;
+            min-height: 100vh;
+        }
+
+        .header {
+            padding: 48px 60px 36px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-title {
+            font-size: 28px;
+            font-weight: 500;
+            color: var(--text);
+            letter-spacing: 4px;
+            margin-bottom: 6px;
+        }
+
+        .header-sub {
+            font-size: 13px;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 48px 60px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            padding: 32px;
+        }
+
+        .card-tag {
+            display: inline-block;
+            font-size: 11px;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+            border: 1px solid var(--border);
+            padding: 2px 8px;
+            margin-bottom: 14px;
+        }
+
+        .card-title {
+            font-size: 17px;
+            font-weight: 500;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .card-desc {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-bottom: 24px;
+            line-height: 1.7;
+        }
+
+        .form-group { margin-bottom: 14px; }
+
+        label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-bottom: 5px;
+        }
+
+        input {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 9px 12px;
+            font-family: 'Noto Sans SC', sans-serif;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+            border-radius: 0;
+        }
+
+        input:focus { border-color: var(--accent); }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background: var(--accent);
+            border: none;
+            color: #faf7f2;
+            font-family: 'Noto Sans SC', sans-serif;
+            font-size: 14px;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            margin-top: 8px;
+        }
+
+        button:hover { opacity: 0.85; }
+
+        .result {
+            margin-top: 14px;
+            padding: 10px 14px;
+            font-size: 13px;
+            line-height: 1.5;
+            display: none;
+        }
+
+        .result.success {
+            background: rgba(90,138,106,0.08);
+            color: var(--success);
+            border-left: 2px solid var(--success);
+            display: block;
+        }
+
+        .result.error {
+            background: rgba(138,90,90,0.08);
+            color: var(--error);
+            border-left: 2px solid var(--error);
+            display: block;
+        }
+
+        .query-card { grid-column: 1 / -1; }
+
+        .btn-query {
+            width: auto;
+            padding: 10px 32px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+
+        th {
+            text-align: left;
+            padding: 10px 14px;
+            font-size: 12px;
+            color: var(--text-dim);
+            border-bottom: 1px solid var(--border);
+            font-weight: 400;
+        }
+
+        td {
+            padding: 11px 14px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        tr:last-child td { border-bottom: none; }
+
+        .delete-row {
+            display: flex;
+            gap: 14px;
+            align-items: flex-end;
+        }
+
+        .delete-row .form-group {
+            flex: 1;
+            margin: 0;
+        }
+
+        .delete-row button {
+            width: auto;
+            padding: 10px 32px;
+            white-space: nowrap;
+            margin-top: 0;
+            align-self: flex-end;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-title">岚 · 数据库管理系统</div>
+    <div class="header-sub">数据库工程作业</div>
+</div>
+
+<div class="container">
+
+    <!-- 触发器：插入专辑歌曲 -->
+    <div class="card">
+        <div class="card-tag">触发器</div>
+        <div class="card-title">插入专辑歌曲</div>
+        <div class="card-desc">向专辑添加歌曲。触发器自动验证歌曲发行日期不得晚于专辑发行日期。</div>
+        <div class="form-group">
+            <label>专辑编号</label>
+            <input type="number" id="t_album_id" placeholder="例：2">
+        </div>
+        <div class="form-group">
+            <label>歌曲编号</label>
+            <input type="number" id="t_song_id" placeholder="例：4">
+        </div>
+        <button onclick="insertAlbumSong()">确认插入</button>
+        <div class="result" id="t_result"></div>
+    </div>
+
+    <!-- 存储过程：更新演唱会 -->
+    <div class="card">
+        <div class="card-tag">存储过程</div>
+        <div class="card-title">更新演唱会信息</div>
+        <div class="card-desc">调用存储过程更新演唱会场地和结束日期。演唱会不存在时自动报错。</div>
+        <div class="form-group">
+            <label>演唱会编号</label>
+            <input type="number" id="u_concert_id" placeholder="例：1">
+        </div>
+        <div class="form-group">
+            <label>新场地</label>
+            <input type="text" id="u_venue" placeholder="例：埼玉超级竞技场">
+        </div>
+        <div class="form-group">
+            <label>新结束日期</label>
+            <input type="date" id="u_end_date">
+        </div>
+        <button onclick="updateConcert()">确认更新</button>
+        <div class="result" id="u_result"></div>
+    </div>
+
+    <!-- 视图查询 -->
+    <div class="card query-card">
+        <div class="card-tag">视图查询</div>
+        <div class="card-title">演唱会摘要查询</div>
+        <div class="card-desc">通过视图查询每场演唱会的场地与演唱曲目数量。</div>
+        <button class="btn-query" onclick="queryConcerts()">查询</button>
+        <div id="q_result"></div>
+    </div>
+
+    <!-- 事务：删除演唱会 -->
+    <div class="card query-card">
+        <div class="card-tag">事务</div>
+        <div class="card-title">删除演唱会</div>
+        <div class="card-desc">删除演唱会及其关联的歌单和成员记录。使用事务保证数据一致性，演唱会不存在时自动回滚。</div>
+        <div class="delete-row">
+            <div class="form-group">
+                <label>演唱会编号</label>
+                <input type="number" id="d_concert_id" placeholder="例：3">
+            </div>
+            <button onclick="deleteConcert()">确认删除</button>
+        </div>
+        <div class="result" id="d_result"></div>
+    </div>
+
+</div>
+
+<script>
+    async function insertAlbumSong() {
+        const album_id = document.getElementById('t_album_id').value;
+        const song_id = document.getElementById('t_song_id').value;
+        const res = document.getElementById('t_result');
+        if (!album_id || !song_id) { showResult(res, 'error', '请填写所有字段'); return; }
+        const data = await post('/insert_album_song', { album_id, song_id });
+        showResult(res, data.status, data.message);
+    }
+
+    async function updateConcert() {
+        const concert_id = document.getElementById('u_concert_id').value;
+        const venue = document.getElementById('u_venue').value;
+        const end_date = document.getElementById('u_end_date').value;
+        const res = document.getElementById('u_result');
+        if (!concert_id || !venue || !end_date) { showResult(res, 'error', '请填写所有字段'); return; }
+        const data = await post('/update_concert', { concert_id, venue, end_date });
+        showResult(res, data.status, data.message);
+    }
+
+    async function queryConcerts() {
+        const res = document.getElementById('q_result');
+        const data = await get('/query_concerts');
+        if (data.status === 'error') {
+            res.innerHTML = `<div class="result error" style="display:block">${data.message}</div>`;
+            return;
+        }
+        let html = '<table><thead><tr><th>演唱会名称</th><th>场地</th><th>演唱曲目数</th></tr></thead><tbody>';
+        data.data.forEach(r => {
+            html += `<tr><td>${r.concert_title}</td><td>${r.venue}</td><td>${r.total_songs}</td></tr>`;
+        });
+        html += '</tbody></table>';
+        res.innerHTML = html;
+    }
+
+    async function deleteConcert() {
+        const concert_id = document.getElementById('d_concert_id').value;
+        const res = document.getElementById('d_result');
+        if (!concert_id) { showResult(res, 'error', '请填写演唱会编号'); return; }
+        const data = await post('/delete_concert', { concert_id });
+        showResult(res, data.status, data.message);
+    }
+
+    async function post(url, body) {
+        const form = new URLSearchParams(body);
+        const r = await fetch(url, { method: 'POST', body: form });
+        return r.json();
+    }
+
+    async function get(url) {
+        const r = await fetch(url);
+        return r.json();
+    }
+
+    function showResult(el, status, message) {
+        el.className = 'result ' + status;
+        el.textContent = message;
+    }
+</script>
+
+</body>
+</html>
