@@ -31,3 +31,24 @@ def insert_album_song():
         return jsonify({'status': 'error', 'message': str(e)})
     finally:
         conn.close()
+
+
+@app.route('/update_concert', methods=['POST'])
+def update_concert():
+    concert_id = request.form.get('concert_id')
+    venue = request.form.get('venue')
+    end_date = request.form.get('end_date')
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.callproc('update_concert_info', [concert_id, venue, end_date])
+        results = []
+        for result in cursor.stored_results():
+            results = result.fetchall()
+        conn.commit()
+        msg = results[0][0] if results else 'Updated successfully!'
+        return jsonify({'status': 'success', 'message': msg})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
+    finally:
+        conn.close()
