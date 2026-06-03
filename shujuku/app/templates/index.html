@@ -319,13 +319,13 @@
             res.innerHTML = `<div class="result error" style="display:block">${data.message}</div>`;
             return;
         }
-        let html = '<table><thead><tr><th>演唱会名称</th><th>场地</th><th>演唱曲目数</th></tr></thead><tbody>';
+        let html = '<table><thead><tr><th>编号</th><th>演唱会名称</th><th>场地</th><th>演唱曲目数</th></tr></thead><tbody>';
         data.data.forEach(r => {
-            html += `<tr><td>${r.concert_title}</td><td>${r.venue}</td><td>${r.total_songs}</td></tr>`;
+            html += `<tr><td>${r.concert_id}</td><td>${r.concert_title}</td><td>${r.venue}</td><td>${r.total_songs}</td></tr>`;
         });
         html += '</tbody></table>';
         res.innerHTML = html;
-    }
+}
 
     async function querySetlist() {
         const concert_id = document.getElementById('s_concert_id').value;

@@ -16,7 +16,6 @@ def get_connection():#连接
 def index():
     return render_template('index.html')
 
-
 @app.route('/insert_album_song', methods=['POST'])#专辑添加歌曲
 def insert_album_song():
     album_id = request.form.get('album_id')
@@ -27,9 +26,32 @@ def insert_album_song():
         cursor = conn.cursor()
         cursor.execute("INSERT INTO album_song VALUES (%s, %s)", (album_id, song_id))
         conn.commit()
-        return jsonify({'status': 'success', 'message': f'歌曲 {song_id} 已成功添加到专辑 {album_id}！'})
+        cursor.execute("""
+            SELECT a.title, s.title 
+            FROM album a, song s 
+            WHERE a.album_id = %s AND s.song_id = %s
+        """, (album_id, song_id))
+        row = cursor.fetchone()
+        album_name = row[0] if row else album_id
+        song_name = row[1] if row else song_id
+        return jsonify({'status': 'success', 'message': f'歌曲《{song_name}》已成功添加到专辑《{album_name}》！'})
+    
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)})
+        err = str(e)
+        if '1644' in err:
+            try:
+                cursor.execute("""
+                    SELECT a.title, s.title 
+                    FROM album a, song s 
+                    WHERE a.album_id = %s AND s.song_id = %s
+                """, (album_id, song_id))
+                row = cursor.fetchone()
+                album_name = row[0] if row else album_id
+                song_name = row[1] if row else song_id
+                return jsonify({'status': 'error', 'message': f'插入失败！歌曲《{song_name}》的发行日期晚于专辑《{album_name}》的发行日期！'})
+            except:
+                pass
+        return jsonify({'status': 'error', 'message': err})
     finally:
         if conn:
             conn.close()
@@ -41,13 +63,13 @@ def query_concerts():
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT concert_title, venue, SUM(song_count) AS total_songs
+            SELECT concert_id, concert_title, venue, SUM(song_count) AS total_songs
             FROM concert_summary
             GROUP BY concert_id, concert_title, venue
             ORDER BY total_songs DESC
         """)
         rows = cursor.fetchall()
-        data = [{'concert_title': r[0], 'venue': r[1], 'total_songs': r[2]} for r in rows]
+        data = [{'concert_id': r[0], 'concert_title': r[1], 'venue': r[2], 'total_songs': r[3]} for r in rows]
         return jsonify({'status': 'success', 'data': data})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})

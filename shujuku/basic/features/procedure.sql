@@ -15,7 +15,7 @@ BEGIN
 
     IF concert_count = 0 THEN
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Error: Concert does not exist!';
+        SET MESSAGE_TEXT = 'Error！演唱会不存在!';
     END IF;
 
     UPDATE concert
@@ -26,6 +26,6 @@ BEGIN
     DELETE FROM setlist
     WHERE concert_id = p_concert_id;
 
-    SELECT CONCAT('Concert ', p_concert_id, ' updated successfully!') AS result;
+    SELECT CONCAT('Concert ', p_concert_id, '更新成功!') AS result;
 END //
 DELIMITER ;

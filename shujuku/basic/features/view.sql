@@ -6,6 +6,7 @@ SELECT
     c.title AS concert_title,
     c.venue,
     c.start_date,
+    m.member_id,
     m.name AS member_name,
     COUNT(DISTINCT s.song_id) AS song_count
 FROM concert c
