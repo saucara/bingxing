@@ -3,7 +3,7 @@ import pymysql
 
 app = Flask(__name__)
 
-def get_connection():
+def get_connection():#连接
     return pymysql.connect(
         host='localhost',
         user='root',
@@ -17,7 +17,7 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/insert_album_song', methods=['POST'])
+@app.route('/insert_album_song', methods=['POST'])#专辑添加歌曲
 def insert_album_song():
     album_id = request.form.get('album_id')
     song_id = request.form.get('song_id')
@@ -34,7 +34,7 @@ def insert_album_song():
         if conn:
             conn.close()
 
-@app.route('/query_concerts', methods=['GET'])
+@app.route('/query_concerts', methods=['GET'])#查询演唱会
 def query_concerts():
     conn = None
     try:
@@ -56,7 +56,7 @@ def query_concerts():
             conn.close()
 
 
-@app.route('/update_concert', methods=['POST'])
+@app.route('/update_concert', methods=['POST'])#更新演唱会信息
 def update_concert():
     concert_id = request.form.get('concert_id')
     venue = request.form.get('venue')
@@ -77,7 +77,7 @@ def update_concert():
             conn.close()
 
 
-@app.route('/delete_concert', methods=['POST'])
+@app.route('/delete_concert', methods=['POST'])#删除演唱会
 def delete_concert():
     concert_id = request.form.get('concert_id')
     conn = None
@@ -94,6 +94,48 @@ def delete_concert():
     finally:
         if conn:
             conn.close()
+
+
+@app.route('/query_setlist', methods=['GET'])#查询演唱会歌单
+def query_setlist():
+    concert_id = request.args.get('concert_id')
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT c.title AS concert_title, s.title AS song_title,
+                   s.duration, s.release_date, s.theme_type
+            FROM setlist sl
+            JOIN concert c ON sl.concert_id = c.concert_id
+            JOIN song s ON sl.song_id = s.song_id
+            WHERE sl.concert_id = %s
+            ORDER BY s.title
+        """, (concert_id,))
+        rows = cursor.fetchall()
+        if not rows:
+            return jsonify({'status': 'error', 'message': '未找到该演唱会或歌单为空'})
+        data = {
+            'concert_title': rows[0][0],
+            'songs': [
+                {
+                    'title': r[1],
+                    'duration': f"{r[2] // 60}分{r[2] % 60}秒" if r[2] else '-',
+                    'release_date': str(r[3]) if r[3] else '-',
+                    'theme_type': r[4] if r[4] else '-'
+                } for r in rows
+            ]
+        }
+        return jsonify({'status': 'success', 'data': data})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
+    finally:
+        if conn:
+            conn.close()
+ 
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)

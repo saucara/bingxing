@@ -104,7 +104,6 @@
             font-size: 14px;
             outline: none;
             transition: border-color 0.2s;
-            border-radius: 0;
         }
 
         input:focus { border-color: var(--accent); }
@@ -147,7 +146,7 @@
             display: block;
         }
 
-        .query-card { grid-column: 1 / -1; }
+        .full-width { grid-column: 1 / -1; }
 
         .btn-query {
             width: auto;
@@ -194,7 +193,14 @@
             padding: 10px 32px;
             white-space: nowrap;
             margin-top: 0;
-            align-self: flex-end;
+        }
+
+        .setlist-header {
+            font-size: 15px;
+            font-weight: 500;
+            margin-top: 20px;
+            margin-bottom: 4px;
+            color: var(--accent);
         }
     </style>
 </head>
@@ -245,17 +251,32 @@
         <div class="result" id="u_result"></div>
     </div>
 
-    <!-- 视图查询 -->
-    <div class="card query-card">
+    <!-- 视图查询：演唱会摘要 -->
+    <div class="card full-width">
         <div class="card-tag">视图查询</div>
         <div class="card-title">演唱会摘要查询</div>
         <div class="card-desc">通过视图查询每场演唱会的场地与演唱曲目数量。</div>
-        <button class="btn-query" onclick="queryConcerts()">查询</button>
+        <button class="btn-query" onclick="queryConcerts()">查询全部演唱会</button>
         <div id="q_result"></div>
     </div>
 
+    <!-- 新增：演唱会歌单查询 -->
+    <div class="card full-width">
+        <div class="card-tag">歌单查询</div>
+        <div class="card-title">演唱会歌单详情</div>
+        <div class="card-desc">输入演唱会编号，查询该演唱会的完整歌单信息。</div>
+        <div style="display:flex; gap:14px; align-items:flex-end;">
+            <div class="form-group" style="flex:1; margin:0;">
+                <label>演唱会编号</label>
+                <input type="number" id="s_concert_id" placeholder="例：1">
+            </div>
+            <button class="btn-query" style="margin-top:0;" onclick="querySetlist()">查询歌单</button>
+        </div>
+        <div id="s_result"></div>
+    </div>
+
     <!-- 事务：删除演唱会 -->
-    <div class="card query-card">
+    <div class="card full-width">
         <div class="card-tag">事务</div>
         <div class="card-title">删除演唱会</div>
         <div class="card-desc">删除演唱会及其关联的歌单和成员记录。使用事务保证数据一致性，演唱会不存在时自动回滚。</div>
@@ -301,6 +322,24 @@
         let html = '<table><thead><tr><th>演唱会名称</th><th>场地</th><th>演唱曲目数</th></tr></thead><tbody>';
         data.data.forEach(r => {
             html += `<tr><td>${r.concert_title}</td><td>${r.venue}</td><td>${r.total_songs}</td></tr>`;
+        });
+        html += '</tbody></table>';
+        res.innerHTML = html;
+    }
+
+    async function querySetlist() {
+        const concert_id = document.getElementById('s_concert_id').value;
+        const res = document.getElementById('s_result');
+        if (!concert_id) { res.innerHTML = '<div class="result error" style="display:block">请填写演唱会编号</div>'; return; }
+        const data = await get(`/query_setlist?concert_id=${concert_id}`);
+        if (data.status === 'error') {
+            res.innerHTML = `<div class="result error" style="display:block">${data.message}</div>`;
+            return;
+        }
+        let html = `<div class="setlist-header">${data.data.concert_title}</div>`;
+        html += '<table><thead><tr><th>歌曲名称</th><th>时长</th><th>发行日期</th><th>类型</th></tr></thead><tbody>';
+        data.data.songs.forEach(s => {
+            html += `<tr><td>${s.title}</td><td>${s.duration}</td><td>${s.release_date}</td><td>${s.theme_type}</td></tr>`;
         });
         html += '</tbody></table>';
         res.innerHTML = html;

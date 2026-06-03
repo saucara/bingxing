@@ -16,7 +16,7 @@ BEGIN
 
     IF song_release > album_release THEN
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Error: Song release date is later than album release date!';
+        SET MESSAGE_TEXT = 'Error！单曲的发行日期不能晚于专辑的发行日期！';
     END IF;
 END //
 DELIMITER ;
