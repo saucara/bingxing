@@ -10,7 +10,7 @@ BEGIN
     BEGIN
         ROLLBACK;
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Error: Transaction failed, rolled back!';
+        SET MESSAGE_TEXT = 'Error！出错了，回滚！';
     END;
 
     START TRANSACTION;
@@ -21,13 +21,13 @@ BEGIN
 
     IF concert_count = 0 THEN
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Error: Concert does not exist, rolled back!';
+        SET MESSAGE_TEXT = 'Error!演唱会不存在，回滚了！';
     END IF;
     DELETE FROM setlist WHERE concert_id = p_concert_id;--删setlist里的关联记录
     DELETE FROM hold WHERE concert_id = p_concert_id;--删hold里的关联记录
     DELETE FROM concert WHERE concert_id = p_concert_id;--删concert
 
     COMMIT;
-    SELECT CONCAT('Concert ', p_concert_id, ' deleted successfully!') AS result;
+    SELECT CONCAT('Concert ', p_concert_id, '删除成功！') AS result;
 END //
 DELIMITER ;
