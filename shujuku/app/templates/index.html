@@ -213,20 +213,20 @@
 
 <div class="container">
 
-    <!-- 触发器：插入专辑歌曲 -->
+    <!-- 触发器：插入演唱会歌曲 -->
     <div class="card">
         <div class="card-tag">触发器</div>
-        <div class="card-title">插入专辑歌曲</div>
-        <div class="card-desc">向专辑添加歌曲。触发器自动验证歌曲发行日期不得晚于专辑发行日期。</div>
+        <div class="card-title">添加演唱会歌曲</div>
+        <div class="card-desc">向演唱会歌单添加歌曲。触发器自动验证歌曲发行日期不得晚于演唱会开始日期。</div>
         <div class="form-group">
-            <label>专辑编号</label>
-            <input type="number" id="t_album_id" placeholder="例：2">
+            <label>演唱会编号</label>
+            <input type="number" id="t_concert_id" placeholder="例：1">
         </div>
         <div class="form-group">
             <label>歌曲编号</label>
-            <input type="number" id="t_song_id" placeholder="例：4">
+            <input type="number" id="t_song_id" placeholder="例：3">
         </div>
-        <button onclick="insertAlbumSong()">确认插入</button>
+        <button onclick="insertSetlist()">确认插入</button>
         <div class="result" id="t_result"></div>
     </div>
 
@@ -293,12 +293,12 @@
 </div>
 
 <script>
-    async function insertAlbumSong() {
-        const album_id = document.getElementById('t_album_id').value;
+    async function insertSetlist() {
+        const concert_id = document.getElementById('t_concert_id').value;
         const song_id = document.getElementById('t_song_id').value;
         const res = document.getElementById('t_result');
-        if (!album_id || !song_id) { showResult(res, 'error', '请填写所有字段'); return; }
-        const data = await post('/insert_album_song', { album_id, song_id });
+        if (!concert_id || !song_id) { showResult(res, 'error', '请填写所有字段'); return; }
+        const data = await post('/insert_setlist', { concert_id, song_id });
         showResult(res, data.status, data.message);
     }
 
